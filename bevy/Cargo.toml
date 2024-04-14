@@ -1,0 +1,24 @@
+[package]
+name = "make_the_hero"
+version = "0.1.0"
+edition = "2021"
+publish = false
+categories = ["games"]
+keywords = ["bevy", "bevy_flurx"]
+authors = ["elm"]
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/not-elm/and_then_there_was_only_the_one"
+
+
+[dependencies]
+bevy = "0.13.2"
+bevy_flurx = { path = "../../bevy_flurx" }
+puzzle_core = { path = "../puzzle_core", features = ["bevy"] }
+bevy_mod_picking = { version = "0.18.2", default-features = false, features = ["backend_sprite", "backend_raycast"] }
+bevy_tweening = "0.10.0"
+bevy-input-sequence = "0.3.0"
+
+[features]
+default = ["release"]
+release = []

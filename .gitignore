@@ -1,0 +1,9 @@
+/target
+/.vscode
+/.idea
+/dist
+/assets/audio
+/assets/arrow_release.png
+/src/plugin/assets
+# Project exclude paths
+/puzzle_core/target/

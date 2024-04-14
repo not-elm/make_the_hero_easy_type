@@ -1,0 +1,4 @@
+
+[workspace]
+members = ["puzzle_core", "bevy", "bevy_version"]
+workspace.resolver = "2"

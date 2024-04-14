@@ -1,0 +1,14 @@
+[package]
+name = "puzzle_core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+num = "0.4.2"
+rand = "0.9.0-alpha.1"
+bevy = { version = "0.13.2", default-features = false, optional = true }
+
+[features]
+default = []
+bevy = ["dep:bevy"]
