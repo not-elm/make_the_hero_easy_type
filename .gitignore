@@ -1,9 +1,7 @@
 /target
 /.vscode
 /.idea
-/dist
-/assets/audio
-/assets/arrow_release.png
-/src/plugin/assets
-# Project exclude paths
+bevy/dist
+bevy/assets/audio
+bevy/assets/arrow_release.png
 /puzzle_core/target/
