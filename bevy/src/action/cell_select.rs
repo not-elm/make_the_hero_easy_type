@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use bevy::asset::AssetServer;
 use bevy::math::{Quat, Vec2, Vec3};
-use bevy::prelude::{Commands, default, EventWriter, In, IntoSystem, Query, Res, Sprite, SpriteBundle, System, Transform};
+use bevy::prelude::{Color, Commands, default, EventWriter, In, IntoSystem, Query, Res, Sprite, SpriteBundle, System, Transform};
 use bevy_flurx::action::{Action, delay};
 use bevy_flurx::prelude::*;
 use bevy_mod_picking::events::{Down, Pointer};
@@ -11,10 +11,11 @@ use bevy_mod_picking::PickableBundle;
 use bevy_mod_picking::prelude::{ListenerInput, On};
 use bevy_tweening::{Animator, EaseMethod, Tween, TweenCompleted};
 use bevy_tweening::lens::TransformPositionLens;
+
 use puzzle_core::move_dir::MoveDir;
 
 use crate::arrow::{Arrow, ArrowSelected};
-use crate::consts::{PUZZLE_HALF, PUZZLE_SIZE};
+use crate::consts::PUZZLE_HALF;
 use crate::plugin::stage::{CellSelected, MoveSource, PuzzleStage};
 
 pub fn select_cell() -> Action<Duration> {
@@ -46,15 +47,16 @@ fn spawn_arrow(dir: MoveDir) -> impl System<In=CellSelected, Out=CellSelected> {
             return event;
         }
         let start = puzzle.get(event.0).unwrap().translation;
-        #[cfg(feature = "release")]
+        #[cfg(not(debug_assertions))]
         const ASSET_PATH: &str = "arrow_release.png";
-        #[cfg(not(feature = "release"))]
+        #[cfg(debug_assertions)]
         const ASSET_PATH: &str = "arrow.png";
 
         commands.spawn((
             SpriteBundle {
                 sprite: Sprite {
                     custom_size: Some(Vec2::splat(PUZZLE_HALF)),
+                    color: Color::default().with_a(0.8),
                     ..default()
                 },
                 texture: asset.load(ASSET_PATH),
@@ -66,7 +68,7 @@ fn spawn_arrow(dir: MoveDir) -> impl System<In=CellSelected, Out=CellSelected> {
                 Duration::from_millis(200),
                 TransformPositionLens {
                     start,
-                    end: to_vec3(dir) * PUZZLE_SIZE + Vec3::new(0., 0., 10.) + start,
+                    end: to_vec3(dir) * PUZZLE_HALF + Vec3::new(0., 0., 10.) + start,
                 },
             ).with_completed_event(0)),
             PickableBundle::default(),

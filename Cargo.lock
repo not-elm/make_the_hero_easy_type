@@ -586,7 +586,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_flurx"
-version = "0.3.3"
+version = "0.3.4-beta.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa265c51ea5f4ad093c457de69ba1f7cb78cdf8279288f703f9d3cafaded6bb9"
 dependencies = [
  "async-compat",
  "bevy",
@@ -799,7 +801,6 @@ checksum = "d79f17a34025d95e2e3525207ec73090647c6f40c3136fc674f87e167a9ae6be"
 dependencies = [
  "bevy_app",
  "bevy_core",
- "bevy_core_pipeline",
  "bevy_ecs",
  "bevy_eventlistener",
  "bevy_math",
@@ -807,13 +808,9 @@ dependencies = [
  "bevy_picking_highlight",
  "bevy_picking_input",
  "bevy_picking_raycast",
- "bevy_picking_selection",
  "bevy_picking_sprite",
- "bevy_picking_ui",
  "bevy_reflect",
  "bevy_render",
- "bevy_text",
- "bevy_ui",
  "bevy_utils",
  "bevy_window",
 ]
@@ -891,9 +888,7 @@ dependencies = [
  "bevy_app",
  "bevy_asset",
  "bevy_ecs",
- "bevy_pbr",
  "bevy_picking_core",
- "bevy_picking_selection",
  "bevy_reflect",
  "bevy_render",
  "bevy_sprite",
@@ -911,7 +906,6 @@ dependencies = [
  "bevy_input",
  "bevy_math",
  "bevy_picking_core",
- "bevy_picking_selection",
  "bevy_reflect",
  "bevy_render",
  "bevy_utils",
@@ -935,21 +929,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_picking_selection"
-version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbc986eefd38058918322418d1e6ae398e74d48730e623a55dc20be78d5ee24b"
-dependencies = [
- "bevy_app",
- "bevy_ecs",
- "bevy_eventlistener",
- "bevy_input",
- "bevy_picking_core",
- "bevy_reflect",
- "bevy_utils",
-]
-
-[[package]]
 name = "bevy_picking_sprite"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -963,24 +942,6 @@ dependencies = [
  "bevy_render",
  "bevy_sprite",
  "bevy_transform",
- "bevy_window",
-]
-
-[[package]]
-name = "bevy_picking_ui"
-version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85ad6d40e33203115af38adc984341cf5637911baa940028b6a43a9917d64e79"
-dependencies = [
- "bevy_app",
- "bevy_ecs",
- "bevy_hierarchy",
- "bevy_math",
- "bevy_picking_core",
- "bevy_render",
- "bevy_transform",
- "bevy_ui",
- "bevy_utils",
  "bevy_window",
 ]
 
@@ -1254,17 +1215,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.58",
-]
-
-[[package]]
-name = "bevy_version"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_flurx",
- "bevy_mod_picking",
- "bevy_tweening",
- "puzzle_core",
 ]
 
 [[package]]
@@ -2135,7 +2085,7 @@ dependencies = [
  "vec_map",
  "wasm-bindgen",
  "web-sys",
- "windows 0.52.0",
+ "windows 0.54.0",
 ]
 
 [[package]]

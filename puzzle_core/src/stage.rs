@@ -15,6 +15,8 @@ pub type StageRatioArray<const STAGE_SIZE: usize> = [Option<MovableRatio>; STAGE
 #[derive(Debug)]
 pub struct Stage<const STAGE_SIZE: usize, Calc: Calculator> {
     ratios: StageRatioArray<STAGE_SIZE>,
+    cache_undo: Vec<StageRatioArray<STAGE_SIZE>>,
+    cache_redo: Vec<StageRatioArray<STAGE_SIZE>>,
     calculator: Calc,
 }
 
@@ -27,6 +29,8 @@ impl<const STAGE_SIZE: usize, Calc> Stage<STAGE_SIZE, Calc>
         Self {
             ratios: ratios.map(|r| Some(MovableRatio::from(r))),
             calculator,
+            cache_undo: Vec::new(),
+            cache_redo: Vec::new(),
         }
     }
 
@@ -106,10 +110,26 @@ impl<const STAGE_SIZE: usize, Calc> Stage<STAGE_SIZE, Calc>
         self.ratios.map(|r| r.map(|r| r.ratio))
     }
 
+    pub fn undo(&mut self) {
+        if let Some(cache) = self.cache_undo.pop() {
+            self.cache_redo.push(self.ratios);
+            self.ratios = cache;
+        }
+    }
+
+    pub fn redo(&mut self) {
+        if let Some(cache) = self.cache_redo.pop(){
+            self.cache_undo.push(self.ratios);
+            self.ratios = cache;
+        }
+    }
+
     pub fn move_cell(&mut self, src_no: usize, dir: MoveDir) {
         if !self.can_move(src_no, dir) {
             return;
         }
+        self.cache_undo.push(self.ratios);
+        self.cache_redo.clear();
         let dist_no = Calc::dist_no::<STAGE_SIZE>(src_no, &dir).unwrap();
         let src_ratio = self.ratios[src_no].map(|m| m.ratio).unwrap();
         match dir {
@@ -166,6 +186,8 @@ impl<const STAGE_SIZE: usize, Calc: Calculator + Default> Default for Stage<STAG
         Self {
             ratios: [None; STAGE_SIZE],
             calculator: Calc::default(),
+            cache_undo: Vec::new(),
+            cache_redo: Vec::new(),
         }
     }
 }

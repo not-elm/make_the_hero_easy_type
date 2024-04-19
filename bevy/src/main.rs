@@ -1,7 +1,6 @@
 #![allow(clippy::type_complexity)]
 
 use bevy::app::{App, PluginGroup, Startup, Update};
-
 use bevy::DefaultPlugins;
 use bevy::prelude::{Camera2dBundle, ClearColor, Color, Commands, EventReader, KeyCode, ResMut, Window};
 use bevy::utils::default;
@@ -33,7 +32,7 @@ fn main() {
     {
         use bevy::asset::AssetMetaCheck;
         use bevy::prelude::Msaa;
-        
+
         app
             .insert_resource(Msaa::Off)
             .insert_resource(AssetMetaCheck::Never);
@@ -67,6 +66,9 @@ fn spawn_camera(
     commands.spawn(Camera2dBundle::default());
 }
 
+
+struct CellAct;
+
 /// It has been described the sequence from the start to the end of the game in this function.
 ///
 /// Since it is this game is simply, all the game processed are written in one [`Reactor`],
@@ -80,10 +82,12 @@ fn spawn_reactor(mut commands: Commands) {
                 once::switch::on::<InOperation>()
                     .then(wait::any(actions![
                         update_cells(),                                     // 0: move cells
-                        wait::event::comes::<LastOne>(),  // 1: stage clear
+                        wait::event::comes::<LastOne>(),                    // 1: stage clear
                         wait::input::just_pressed().with(KeyCode::KeyR),    // 2: retry this stage
                         wait::input::just_pressed().with(KeyCode::KeyG),    // 3: generate another stage
                         wait::input::just_pressed().with(KeyCode::KeyP),    // 4: play answer
+                        wait::input::just_pressed().with(KeyCode::KeyZ),    // 5: undo
+                        wait::input::just_pressed().with(KeyCode::KeyX),    // 6: redo
                     ]))
                     .through(cleanup())
             }).await;
@@ -106,6 +110,12 @@ fn spawn_reactor(mut commands: Commands) {
                         task.will(Update, play_next_step()).await;
                     }
                 }
+                5 => {
+                    let _ = task.will(Update, record::undo::once::<CellAct>()).await;
+                }
+                6 => {
+                    let _ = task.will(Update, record::redo::once::<CellAct>()).await;
+                }
                 _ => {}
             }
         }
@@ -119,7 +129,7 @@ fn reset_answers(
 }
 
 fn setup_stage() -> ActionSeed {
-    #[cfg(feature = "release")]
+    #[cfg(not(debug_assertions))]
     {
         use bevy::audio::{PlaybackMode, PlaybackSettings, Volume};
         once::audio::play().with(("audio/bgm.ogg", PlaybackSettings {
@@ -130,7 +140,8 @@ fn setup_stage() -> ActionSeed {
             .then(regenerate_stage())
             .omit()
     }
-    #[cfg(not(feature = "release"))]
+    
+    #[cfg(debug_assertions)]
     {
         regenerate_stage()
     }

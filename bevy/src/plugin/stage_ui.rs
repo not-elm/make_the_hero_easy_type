@@ -1,5 +1,5 @@
 use bevy::app::{App, Plugin, PreStartup, Startup};
-use bevy::hierarchy::{BuildChildren};
+use bevy::hierarchy::BuildChildren;
 use bevy::prelude::{Color, Commands, Component, Entity, IntoSystemConfigs, NodeBundle, PositionType, Query, Reflect, ReflectComponent, Res, resource_exists_and_changed, Text, TextBundle, Update, Val, With};
 use bevy::text::{TextSection, TextStyle};
 use bevy::ui::{Display, FlexDirection, Style};
@@ -100,7 +100,15 @@ fn spawn_input_label(
                 ..default()
             });
             parent.spawn(TextBundle {
-                text: Text::from_section("[P]: Play answer", text_style),
+                text: Text::from_section("[P]: Play answer", text_style.clone()),
+                ..default()
+            });
+            parent.spawn(TextBundle {
+                text: Text::from_section("[Z]: Undo", text_style.clone()),
+                ..default()
+            });
+            parent.spawn(TextBundle {
+                text: Text::from_section("[X]: Redo", text_style),
                 ..default()
             });
         })

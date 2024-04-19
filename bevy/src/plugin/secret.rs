@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy::app::{App, Plugin, PostStartup, Startup};
+use bevy::app::{App, Plugin, PostStartup};
 use bevy::hierarchy::BuildChildren;
 use bevy::prelude::{Color, Commands, Component, Deref, Entity, Event, EventReader, IntoSystemConfigs, KeyCode, Query, Res, ResMut, Resource, resource_exists_and_changed, TextBundle, TextStyle, Update, Visibility, With};
 use bevy::text::{Text, TextSection};
@@ -31,7 +31,7 @@ impl SecretStopWatch {
 #[derive(Component)]
 struct TimeText;
 
-#[derive(Event, Clone)]
+#[derive(Event, Clone, Component, Debug)]
 struct ToggleVisibility;
 
 pub struct SecretPlugin;
@@ -39,14 +39,16 @@ pub struct SecretPlugin;
 impl Plugin for SecretPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_key_sequence_event::<ToggleVisibility>()
             .insert_resource(SecretStopWatch(Stopwatch::new()))
-            .add_systems(Startup, setup_secret_sequence)
-            .add_systems(PostStartup, setup)
+            .add_key_sequence_event::<ToggleVisibility>()
+            .add_systems(PostStartup, (
+                setup,
+                setup_secret_sequence
+            ))
             .add_systems(Update, (
                 update_time_text.run_if(switch_turned_on::<InOperation>),
-                toggle_visibility,
-                reset_stop_watch.run_if(resource_exists_and_changed::<CorrectAnswerNum>)
+                reset_stop_watch.run_if(resource_exists_and_changed::<CorrectAnswerNum>),
+                toggle_visibility
             ));
     }
 }
@@ -88,8 +90,7 @@ fn setup_secret_sequence(
             KeyCode::KeyM,
             KeyCode::KeyE
         ],
-    )
-        .time_limit(Duration::from_secs(3)));
+    ).time_limit(Duration::from_secs(2)));
 }
 
 fn update_time_text(

@@ -43,7 +43,7 @@ fn update_answers(
 }
 
 fn play_stage_clear_se_if_release_mode() -> ActionSeed<&'static str> {
-    #[cfg(feature = "release")]
+   #[cfg(not(debug_assertions))]
     {
         use bevy::audio::PlaybackSettings;
         use bevy_flurx::prelude::OmitOutput;
@@ -52,7 +52,7 @@ fn play_stage_clear_se_if_release_mode() -> ActionSeed<&'static str> {
             .pipe(once::audio::play())
             .omit_output()
     }
-    #[cfg(not(feature = "release"))]
+    #[cfg(debug_assertions)]
     once::run(|In(_): In<&'static str>| {})
 }
 
