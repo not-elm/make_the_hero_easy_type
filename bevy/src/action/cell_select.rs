@@ -20,7 +20,6 @@ use crate::plugin::stage::{CellSelected, MoveSource, PuzzleStage};
 
 pub fn select_cell() -> Action<Duration> {
     delay::time().with(Duration::from_millis(100))
-        .then(once::event::clear::<CellSelected>())
         .then(wait::event::read::<CellSelected>())
         .pipe(once::run(spawn_arrow(MoveDir::Right)))
         .pipe(once::run(spawn_arrow(MoveDir::RightUp)))

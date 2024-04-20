@@ -7,6 +7,7 @@ use bevy::utils::default;
 use bevy::window::WindowPlugin;
 use bevy_flurx::actions;
 use bevy_flurx::prelude::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 use bevy_tweening::{TweenCompleted, TweeningPlugin};
 
@@ -20,6 +21,7 @@ use crate::arrow::ArrowSelected;
 use crate::plugin::PuzzlePlugins;
 use crate::plugin::stage::{CellSelected, CorrectAnswerNum};
 use crate::plugin::stage_clear::{InOperation, LastOne};
+use crate::plugin::stage_ui::{RequestCellRedo, RequestCellUndo, RequestPlayAnswerMode, RequestRegenerateStage, RequestResetStage};
 
 mod arrow;
 mod plugin;
@@ -28,6 +30,13 @@ mod consts;
 
 fn main() {
     let mut app = App::new();
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            prevent_default_event_handling: false,
+            ..default()
+        }),
+        ..default()
+    }));
     #[cfg(target_arch = "wasm32")]
     {
         use bevy::asset::AssetMetaCheck;
@@ -37,15 +46,12 @@ fn main() {
             .insert_resource(Msaa::Off)
             .insert_resource(AssetMetaCheck::Never);
     }
+    #[cfg(debug_assertions)]
+    {
+        app.add_plugins(WorldInspectorPlugin::new());
+    }
     app
         .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    prevent_default_event_handling: false,
-                    ..default()
-                }),
-                ..default()
-            }),
             FlurxPlugin,
             DefaultPickingPlugins,
             TweeningPlugin,
@@ -66,8 +72,8 @@ fn spawn_camera(
     commands.spawn(Camera2dBundle::default());
 }
 
-
-struct CellAct;
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct CellAct;
 
 /// It has been described the sequence from the start to the end of the game in this function.
 ///
@@ -83,11 +89,11 @@ fn spawn_reactor(mut commands: Commands) {
                     .then(wait::any(actions![
                         update_cells(),                                     // 0: move cells
                         wait::event::comes::<LastOne>(),                    // 1: stage clear
-                        wait::input::just_pressed().with(KeyCode::KeyR),    // 2: retry this stage
-                        wait::input::just_pressed().with(KeyCode::KeyG),    // 3: generate another stage
-                        wait::input::just_pressed().with(KeyCode::KeyP),    // 4: play answer
-                        wait::input::just_pressed().with(KeyCode::KeyZ),    // 5: undo
-                        wait::input::just_pressed().with(KeyCode::KeyX),    // 6: redo
+                        request_reset_stage(),    // 2: retry this stage
+                        request_regenerate_stage(),    // 3: generate another stage
+                        request_play_answer_mode(),    // 4: play answer
+                        request_undo(),    // 5: undo
+                        request_redo(),    // 6: redo
                     ]))
                     .through(cleanup())
             }).await;
@@ -122,6 +128,46 @@ fn spawn_reactor(mut commands: Commands) {
     }));
 }
 
+fn request_reset_stage() -> ActionSeed {
+    wait::either(
+        wait::input::just_pressed().with(KeyCode::KeyR),
+        wait::event::comes::<RequestResetStage>(),
+    )
+        .omit()
+}
+
+fn request_regenerate_stage() -> ActionSeed {
+    wait::either(
+        wait::input::just_pressed().with(KeyCode::KeyG),
+        wait::event::comes::<RequestRegenerateStage>(),
+    )
+        .omit()
+}
+
+fn request_play_answer_mode() -> ActionSeed {
+    wait::either(
+        wait::input::just_pressed().with(KeyCode::KeyP),
+        wait::event::comes::<RequestPlayAnswerMode>(),
+    )
+        .omit()
+}
+
+fn request_undo() -> ActionSeed {
+    wait::either(
+        wait::input::just_pressed().with(KeyCode::KeyZ),
+        wait::event::comes::<RequestCellUndo>(),
+    )
+        .omit()
+}
+
+fn request_redo() -> ActionSeed {
+    wait::either(
+        wait::input::just_pressed().with(KeyCode::KeyX),
+        wait::event::comes::<RequestCellRedo>(),
+    )
+        .omit()
+}
+
 fn reset_answers(
     mut answers: ResMut<CorrectAnswerNum>
 ) {
@@ -140,7 +186,7 @@ fn setup_stage() -> ActionSeed {
             .then(regenerate_stage())
             .omit()
     }
-    
+
     #[cfg(debug_assertions)]
     {
         regenerate_stage()

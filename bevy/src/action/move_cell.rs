@@ -16,6 +16,9 @@ use crate::plugin::stage::{CellNo, MoveSource, PuzzleStage};
 pub fn move_cell() -> ActionSeed {
     wait::event::read::<ArrowSelected>()
         .map(|ArrowSelected(entity)| entity)
+        .through(once::run(||{
+            println!("COME!");
+        }))
         .through(once::run(remove_arrows))
         .through(play_move_se_if_release_mode())
         .through(delay::time().with(Duration::from_millis(100)))
