@@ -1,13 +1,12 @@
 use bevy::app::{App, Plugin, PreUpdate, Update};
-use bevy::asset::{Handle};
+use bevy::asset::Handle;
 use bevy::core::Name;
-use bevy::prelude::{Assets, Color, ColorMaterial, Component, Deref, DerefMut, Entity, Event, Parent, Query, Reflect, ReflectComponent, Res, ResMut, Resource, Visibility};
+use bevy::prelude::{Assets, Color, ColorMaterial, Component, Deref, DerefMut, Entity, Event, Parent, Query, Reflect, ReflectComponent, Res, ResMut, Resource};
 use bevy::text::Text;
+
 use puzzle_core::answer::steps::Steps;
 use puzzle_core::calculator::small_size::SmallSizeCalculator;
 use puzzle_core::move_dir::MoveDir;
-
-
 use puzzle_core::ratio::Ratio;
 use puzzle_core::stage::RatioArray;
 
@@ -100,19 +99,16 @@ fn update_cell_texts(
 
 fn update_cell_colors(
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut cells: Query<(&mut Visibility, &Handle<ColorMaterial>, &CellRatio, &Moved)>,
+    mut cells: Query<(&Handle<ColorMaterial>, &CellRatio, &Moved)>,
 ) {
-    for (mut visible, handle, ratio, moved) in cells.iter_mut() {
+    for (handle, ratio, moved) in cells.iter_mut() {
         if let Some(material) = materials.get_mut(handle.id()) {
             material.color = if ratio.0.is_some() && !moved.0 {
-                *visible = Visibility::Visible;
                 CELL_COLOR
             } else if ratio.0.is_some() && moved.0 {
-                *visible = Visibility::Visible;
                 Color::rgb(0.7, 0.7, 0.0)
             } else {
-                *visible = Visibility::Hidden;
-                CELL_COLOR.with_a(0.)
+                CELL_COLOR.with_a(0.0)
             }
         }
     }

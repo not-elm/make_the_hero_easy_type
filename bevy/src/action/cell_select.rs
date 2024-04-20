@@ -3,79 +3,102 @@ use std::time::Duration;
 
 use bevy::asset::AssetServer;
 use bevy::math::{Quat, Vec2, Vec3};
-use bevy::prelude::{Color, Commands, default, EventWriter, In, IntoSystem, Query, Res, Sprite, SpriteBundle, System, Transform};
+use bevy::prelude::{Color, Commands, default, Entity, EventWriter, In, Query, Res, Sprite, SpriteBundle, Transform};
 use bevy_flurx::action::{Action, delay};
 use bevy_flurx::prelude::*;
 use bevy_mod_picking::events::{Down, Pointer};
-use bevy_mod_picking::PickableBundle;
 use bevy_mod_picking::prelude::{ListenerInput, On};
 use bevy_tweening::{Animator, EaseMethod, Tween, TweenCompleted};
 use bevy_tweening::lens::TransformPositionLens;
 
 use puzzle_core::move_dir::MoveDir;
 
-use crate::arrow::{Arrow, ArrowSelected};
+use crate::arrow::{MovableCell, ArrowSelected, Arrow};
 use crate::consts::PUZZLE_HALF;
-use crate::plugin::stage::{CellSelected, MoveSource, PuzzleStage};
+use crate::plugin::stage::{CellNo, CellSelected, MoveSource, PuzzleStage};
 
 pub fn select_cell() -> Action<Duration> {
     delay::time().with(Duration::from_millis(100))
         .then(wait::event::read::<CellSelected>())
-        .pipe(once::run(spawn_arrow(MoveDir::Right)))
-        .pipe(once::run(spawn_arrow(MoveDir::RightUp)))
-        .pipe(once::run(spawn_arrow(MoveDir::Up)))
-        .pipe(once::run(spawn_arrow(MoveDir::LeftUp)))
-        .pipe(once::run(spawn_arrow(MoveDir::Left)))
-        .pipe(once::run(spawn_arrow(MoveDir::LeftDown)))
-        .pipe(once::run(spawn_arrow(MoveDir::Down)))
-        .pipe(once::run(spawn_arrow(MoveDir::RightDown)))
+        .pipe(setup_dir(MoveDir::Right))
+        .pipe(setup_dir(MoveDir::RightUp))
+        .pipe(setup_dir(MoveDir::Up))
+        .pipe(setup_dir(MoveDir::LeftUp))
+        .pipe(setup_dir(MoveDir::Left))
+        .pipe(setup_dir(MoveDir::LeftDown))
+        .pipe(setup_dir(MoveDir::Down))
+        .pipe(setup_dir(MoveDir::RightDown))
         .pipe(once::run(|In(CellSelected(cell, _)): In<CellSelected>, mut commands: Commands| {
             commands.entity(cell).insert(MoveSource);
         }))
         .then(wait::event::comes::<TweenCompleted>())
 }
 
-fn spawn_arrow(dir: MoveDir) -> impl System<In=CellSelected, Out=CellSelected> {
-    IntoSystem::into_system(move |In(event): In<CellSelected>,
-                                  mut commands: Commands,
-                                  stage: Res<PuzzleStage>,
-                                  puzzle: Query<&Transform>,
-                                  asset: Res<AssetServer>,
-    | {
-        if !stage.0.can_move(event.1, dir) {
-            return event;
-        }
-        let start = puzzle.get(event.0).unwrap().translation;
-        #[cfg(not(debug_assertions))]
-        const ASSET_PATH: &str = "arrow_release.png";
-        #[cfg(debug_assertions)]
-        const ASSET_PATH: &str = "arrow.png";
+fn setup_dir(dir: MoveDir) -> ActionSeed<CellSelected, CellSelected> {
+    ActionSeed::define(move |event: CellSelected| {
+        once::run(spawn_arrow).with((dir, event))
+            .then(once::run(replace_cell_point_down_handle).with((dir, event)))
+            .overwrite(event)
+    })
+}
 
-        commands.spawn((
-            SpriteBundle {
-                sprite: Sprite {
-                    custom_size: Some(Vec2::splat(PUZZLE_HALF)),
-                    color: Color::default().with_a(0.8),
-                    ..default()
-                },
-                texture: asset.load(ASSET_PATH),
-                transform: Transform::from_rotation(to_quat(&dir)),
+fn spawn_arrow(
+    In((dir, CellSelected(src_entity, src_no))): In<(MoveDir, CellSelected)>,
+    mut commands: Commands,
+    stage: Res<PuzzleStage>,
+    puzzle: Query<&Transform>,
+    asset: Res<AssetServer>,
+) {
+    if !stage.0.can_move(src_no, dir) {
+        return;
+    }
+    let start = puzzle.get(src_entity).unwrap().translation;
+    #[cfg(not(debug_assertions))]
+    const ASSET_PATH: &str = "arrow_release.png";
+    #[cfg(debug_assertions)]
+    const ASSET_PATH: &str = "arrow.png";
+
+    commands.spawn((
+        Arrow,
+        SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::splat(PUZZLE_HALF)),
+                color: Color::default().with_a(0.5),
                 ..default()
             },
-            Animator::new(Tween::new(
-                EaseMethod::Linear,
-                Duration::from_millis(200),
-                TransformPositionLens {
-                    start,
-                    end: to_vec3(dir) * PUZZLE_HALF + Vec3::new(0., 0., 10.) + start,
-                },
-            ).with_completed_event(0)),
-            PickableBundle::default(),
-            On::<Pointer<Down>>::run(send_arrow_selected),
-            Arrow(dir)
+            texture: asset.load(ASSET_PATH),
+            transform: Transform::from_rotation(to_quat(&dir)),
+            ..default()
+        },
+        Animator::new(Tween::new(
+            EaseMethod::Linear,
+            Duration::from_millis(200),
+            TransformPositionLens {
+                start,
+                end: to_vec3(dir) * PUZZLE_HALF + Vec3::new(0., 0., 10.) + start,
+            },
+        ).with_completed_event(0)),
+    ));
+}
+
+fn replace_cell_point_down_handle(
+    In((dir, CellSelected(_, cell_no))): In<(MoveDir, CellSelected)>,
+    mut commands: Commands,
+    stage: Res<PuzzleStage>,
+    cells: Query<(Entity, &CellNo)>,
+) {
+    if !stage.can_move(cell_no, dir) {
+        return;
+    }
+
+    if let Some((entity, _)) = stage
+        .move_dist_no(cell_no, &dir)
+        .and_then(|dist_no| cells.iter().find(|(_, no)| no.0 == dist_no)) {
+        commands.entity(entity).insert((
+            MovableCell(dir),
+            On::<Pointer<Down>>::run(send_arrow_selected)
         ));
-        event
-    })
+    }
 }
 
 fn to_quat(dir: &MoveDir) -> Quat {
@@ -94,7 +117,7 @@ fn to_quat(dir: &MoveDir) -> Quat {
 fn send_arrow_selected(
     mut ew: EventWriter<ArrowSelected>,
     input: Res<ListenerInput<Pointer<Down>>>,
-    arrows: Query<&Arrow>,
+    arrows: Query<&MovableCell>,
 ) {
     ew.send(ArrowSelected(arrows.get(input.target).unwrap().0));
 }

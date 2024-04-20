@@ -8,7 +8,7 @@ use puzzle_core::calculator::small_size::SmallSizeCalculator;
 use puzzle_core::move_dir::MoveDir;
 
 use crate::{CellAct, wait_tween_event};
-use crate::arrow::{ArrowSelected, remove_arrows};
+use crate::arrow::{ArrowSelected, clean_up_movable_cells, remove_arrows};
 use crate::consts::{TWEEN_SWAP_DIST, TWEEN_SWAP_SRC};
 use crate::plugin::move_cell::{CombineCompleted, RequestMove};
 use crate::plugin::stage::{CellNo, MoveSource, PuzzleStage};
@@ -16,9 +16,7 @@ use crate::plugin::stage::{CellNo, MoveSource, PuzzleStage};
 pub fn move_cell() -> ActionSeed {
     wait::event::read::<ArrowSelected>()
         .map(|ArrowSelected(entity)| entity)
-        .through(once::run(||{
-            println!("COME!");
-        }))
+        .through(once::run(clean_up_movable_cells))
         .through(once::run(remove_arrows))
         .through(play_move_se_if_release_mode())
         .through(delay::time().with(Duration::from_millis(100)))

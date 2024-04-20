@@ -7,7 +7,7 @@ use bevy::ui::{Display, FlexDirection, Interaction, Style, UiRect};
 use bevy::utils::default;
 use bevy_mod_picking::picking_core::Pickable;
 
-use crate::consts::CELL_COLOR;
+use crate::consts::ACCENT_COLOR;
 use crate::plugin::stage::{Answer, CorrectAnswerNum};
 
 #[derive(Copy, Clone, Component, Reflect, Debug, Eq, PartialEq)]
@@ -204,12 +204,11 @@ fn spawn_input_label(
         .add_child(input_label);
 }
 
-
 fn input_button_bundle() -> impl Bundle {
     (
         InputButton,
         ButtonBundle {
-            background_color: BackgroundColor(CELL_COLOR),
+            background_color: BackgroundColor(ACCENT_COLOR),
             style: Style {
                 padding: UiRect::all(Val::Px(8.)),
                 ..default()
@@ -309,10 +308,10 @@ fn update_button_colors(
     for (mut bg, interaction) in input_buttons.iter_mut() {
         bg.0 = match interaction {
             Interaction::Hovered => {
-                CELL_COLOR.with_a(0.8)
+                ACCENT_COLOR.with_a(0.8)
             }
             Interaction::None => {
-                CELL_COLOR
+                ACCENT_COLOR
             }
             Interaction::Pressed => {
                 Color::YELLOW

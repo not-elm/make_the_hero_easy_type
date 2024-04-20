@@ -97,6 +97,10 @@ impl<const STAGE_SIZE: usize, Calc> Stage<STAGE_SIZE, Calc>
         moves
     }
 
+    pub fn move_dist_no(&self, src_no: usize, dir: &MoveDir) -> Option<usize>{
+        Calc::dist_no::<STAGE_SIZE>(src_no, dir)    
+    }
+    
     pub fn move_dist(&self, src: usize, dir: MoveDir) -> Option<&Option<MovableRatio>> {
         let index = usize::from_isize(src as isize + dir as isize)?;
         self.ratios.get(index)

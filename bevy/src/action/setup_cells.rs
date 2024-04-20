@@ -14,7 +14,7 @@ use puzzle_core::answer::{AnswerInfo, generate_random_ratios};
 use puzzle_core::calculator::small_size::SmallSizeCalculator;
 use puzzle_core::stage::Stage;
 
-use crate::arrow::remove_arrows;
+use crate::arrow::clean_up_movable_cells;
 use crate::consts::{CELL_COLOR, PUZZLE_HALF, PUZZLE_MARGIN};
 use crate::plugin::stage::{Answer, AnswerSteps, CellNo, CellPanel, CellRatio, CellSelected, Moved, PuzzleStage, StageRatios};
 
@@ -24,7 +24,7 @@ pub fn setup_cells() -> ActionSeed {
 }
 
 pub fn reset_stage() -> ActionSeed {
-    once::run(remove_arrows)
+    once::run(clean_up_movable_cells)
         .then(once::run(despawn_cells))
         .then(delay::frames().with(1))
         .then(setup_cells())
@@ -118,7 +118,7 @@ fn spawn_cells(
     }
 }
 
-fn send_cell_selected(
+pub fn send_cell_selected(
     mut ew: EventWriter<CellSelected>,
     listener: Res<ListenerInput<Pointer<Down>>>,
     cells: Query<(&CellNo, &CellRatio, &Moved)>,

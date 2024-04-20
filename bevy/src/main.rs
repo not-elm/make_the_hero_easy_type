@@ -7,7 +7,6 @@ use bevy::utils::default;
 use bevy::window::WindowPlugin;
 use bevy_flurx::actions;
 use bevy_flurx::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_mod_picking::DefaultPickingPlugins;
 use bevy_tweening::{TweenCompleted, TweeningPlugin};
 
@@ -48,6 +47,7 @@ fn main() {
     }
     #[cfg(debug_assertions)]
     {
+        use bevy_inspector_egui::quick::WorldInspectorPlugin;
         app.add_plugins(WorldInspectorPlugin::new());
     }
     app
