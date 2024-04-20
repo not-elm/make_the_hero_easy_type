@@ -1,8 +1,13 @@
-use bevy::app::{App, Plugin, PreUpdate, Update};
+use bevy::app::{App, Plugin, PreUpdate, Startup, Update};
 use bevy::asset::Handle;
 use bevy::core::Name;
-use bevy::prelude::{Assets, Color, ColorMaterial, Component, Deref, DerefMut, Entity, Event, Parent, Query, Reflect, ReflectComponent, Res, ResMut, Resource};
+use bevy::prelude::{Assets, Color, ColorMaterial, Commands, Component, default, Deref, DerefMut, Entity, Event, Parent, Query, Reflect, ReflectComponent, Res, ResMut, Resource, SpriteBundle, Transform, Vec2, With};
+use bevy::sprite::Sprite;
 use bevy::text::Text;
+use bevy::window::{PrimaryWindow, Window};
+use bevy_mod_picking::events::{Down, Pointer};
+use bevy_mod_picking::PickableBundle;
+use bevy_mod_picking::prelude::{ListenerInput, On};
 
 use puzzle_core::answer::steps::Steps;
 use puzzle_core::calculator::small_size::SmallSizeCalculator;
@@ -46,6 +51,15 @@ pub struct StageRatios(pub RatioArray<4>);
 #[derive(Resource, Debug, Copy, Clone, Eq, PartialEq, Reflect, Default)]
 pub struct Answer(pub Ratio);
 
+#[derive(Event, Clone)]
+pub struct RequestCancelMove;
+
+impl From<ListenerInput<Pointer<Down>>> for RequestCancelMove {
+    fn from(_: ListenerInput<Pointer<Down>>) -> Self {
+        Self
+    }
+}
+
 #[derive(Resource, Debug, Clone, Eq, PartialEq)]
 pub struct AnswerSteps(pub Steps);
 
@@ -58,6 +72,7 @@ impl Plugin for StagePlugin {
     fn build(&self, app: &mut App) {
         app
             .add_event::<CellSelected>()
+            .add_event::<RequestCancelMove>()
             .register_type::<CellNo>()
             .register_type::<Moved>()
             .register_type::<CellSelected>()
@@ -66,12 +81,34 @@ impl Plugin for StagePlugin {
             .init_resource::<PuzzleStage>()
             .init_resource::<Answer>()
             .insert_resource(CorrectAnswerNum(0))
+            .add_systems(Startup, spawn_dummy_background)
             .add_systems(PreUpdate, update_cell_status)
             .add_systems(Update, (
                 update_cell_texts,
                 update_cell_colors,
             ));
     }
+}
+
+fn spawn_dummy_background(
+    mut commands: Commands,
+    window: Query<&Window, With<PrimaryWindow>>,
+) {
+    // Cell movement can be canceled when clicking on the dummy background while selecting a cell.
+    let resolution = &window.single().resolution;
+    commands.spawn((
+        PickableBundle::default(),
+        On::<Pointer<Down>>::send_event::<RequestCancelMove>(),
+        SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(resolution.width(), resolution.height())),
+                color: Color::WHITE.with_a(0.),
+                ..default()
+            },
+            transform: Transform::from_xyz(0., 0., -10.),
+            ..default()
+        }
+    ));
 }
 
 fn update_cell_status(

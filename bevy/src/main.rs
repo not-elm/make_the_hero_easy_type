@@ -18,7 +18,7 @@ use crate::action::setup_cells::{regenerate_stage, reset_stage};
 use crate::action::stage_clear::stage_clear;
 use crate::arrow::ArrowSelected;
 use crate::plugin::PuzzlePlugins;
-use crate::plugin::stage::{CellSelected, CorrectAnswerNum};
+use crate::plugin::stage::{CellSelected, CorrectAnswerNum, RequestCancelMove};
 use crate::plugin::stage_clear::{InOperation, LastOne};
 use crate::plugin::stage_ui::{RequestCellRedo, RequestCellUndo, RequestPlayAnswerMode, RequestRegenerateStage, RequestResetStage};
 
@@ -87,13 +87,20 @@ fn spawn_reactor(mut commands: Commands) {
             let end_action_index = task.will(Update, {
                 once::switch::on::<InOperation>()
                     .then(wait::any(actions![
-                        update_cells(),                                     // 0: move cells
-                        wait::event::comes::<LastOne>(),                    // 1: stage clear
-                        request_reset_stage(),    // 2: retry this stage
-                        request_regenerate_stage(),    // 3: generate another stage
-                        request_play_answer_mode(),    // 4: play answer
-                        request_undo(),    // 5: undo
-                        request_redo(),    // 6: redo
+                        // 0: move cells
+                        update_cells(),   
+                        // 1: stage clear
+                        wait::event::comes::<LastOne>(),   
+                        // 2: retry this stage
+                        request_reset_stage(),    
+                        // 3: generate another stage
+                        request_regenerate_stage(),   
+                        // 4: play answer
+                        request_play_answer_mode(),
+                        // 5: undo
+                        request_undo(),    
+                        // 6: redo
+                        request_redo(),    
                     ]))
                     .through(cleanup())
             }).await;
@@ -195,10 +202,11 @@ fn setup_stage() -> ActionSeed {
 
 fn update_cells() -> ActionSeed {
     select_cell()
-        .then(wait::either(
-            move_cell(),
+        .then(wait::any(actions![
+             move_cell(),
             wait::event::read::<CellSelected>(), // cancel move
-        ))
+            wait::event::comes::<RequestCancelMove>()
+        ]))
         .omit()
 }
 
