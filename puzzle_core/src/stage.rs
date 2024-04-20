@@ -137,21 +137,21 @@ impl<const STAGE_SIZE: usize, Calc> Stage<STAGE_SIZE, Calc>
         let dist_no = Calc::dist_no::<STAGE_SIZE>(src_no, &dir).unwrap();
         let src_ratio = self.ratios[src_no].map(|m| m.ratio).unwrap();
         match dir {
-            // add
-            MoveDir::LeftUp => {
-                self.execute_mov(src_no, dist_no, src_ratio, |d, s| Some(d + s));
-            }
-            // sub
-            MoveDir::RightUp => {
-                self.execute_mov(src_no, dist_no, src_ratio, |d, s| Some(d - s));
-            }
             // div
-            MoveDir::RightDown => {
+            MoveDir::LeftUp => {
                 self.execute_mov(src_no, dist_no, src_ratio, |d, s| d / s);
             }
             // mul
-            MoveDir::LeftDown => {
+            MoveDir::RightUp => {
                 self.execute_mov(src_no, dist_no, src_ratio, |d, s| Some(d * s));
+            }
+            // add
+            MoveDir::RightDown => {
+                self.execute_mov(src_no, dist_no, src_ratio, |d, s| Some(d + s));
+            }
+            // sub
+            MoveDir::LeftDown => {
+                self.execute_mov(src_no, dist_no, src_ratio, |d, s| Some(d - s));
             }
             // swap
             _ => {
@@ -264,33 +264,35 @@ mod tests {
     #[test]
     fn add() {
         let mut stage = stage();
-        stage.move_cell(2, MoveDir::LeftUp);
-        assert_eq!(stage.ratios[2], None);
-        assert_eq!(stage.ratios[0], Some(MovableRatio::from(Ratio::from(4))));
+         println!("{:?}", stage.ratios);
+        stage.move_cell(0, MoveDir::RightDown);
+        println!("{:?}", stage.ratios);
+        assert_eq!(stage.ratios[0], None);
+        assert_eq!(stage.ratios[2], Some(MovableRatio::from(Ratio::from(4))));
     }
 
     #[test]
     fn sub() {
         let mut stage = stage();
-        stage.move_cell(0, MoveDir::RightUp);
-        assert_eq!(stage.ratios[0], None);
-        assert_eq!(stage.ratios[1], Some(MovableRatio::from(Ratio::from(1))));
+        stage.move_cell(1, MoveDir::LeftDown);
+        assert_eq!(stage.ratios[1], None);
+        assert_eq!(stage.ratios[0], Some(MovableRatio::from(Ratio::from(-1))));
     }
 
     #[test]
     fn mul() {
         let mut stage = stage();
-        stage.move_cell(1, MoveDir::LeftDown);
-        assert_eq!(stage.ratios[0], Some(MovableRatio::from(Ratio::from(2))));
-        assert_eq!(stage.ratios[1], None);
+        stage.move_cell(2, MoveDir::RightUp);
+        assert_eq!(stage.ratios[2], None);
+        assert_eq!(stage.ratios[3], Some(MovableRatio::from(Ratio::from(12))));
     }
 
     #[test]
     fn div() {
         let mut stage = stage();
-        stage.move_cell(1, MoveDir::RightDown);
-        assert_eq!(stage.ratios[1], None);
-        assert_eq!(stage.ratios[3], Some(MovableRatio::from(Ratio::new(1, NonZeroIsize::new(2).unwrap()))));
+        stage.move_cell(2, MoveDir::LeftUp);
+        assert_eq!(stage.ratios[2], None);
+        assert_eq!(stage.ratios[0], Some(MovableRatio::from(Ratio::new(1, NonZeroIsize::new(3).unwrap()))));
     }
 
     fn stage() -> Stage<4, SmallSizeCalculator> {

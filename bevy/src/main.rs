@@ -29,13 +29,6 @@ mod consts;
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins(DefaultPlugins.set(WindowPlugin {
-        primary_window: Some(Window {
-            prevent_default_event_handling: false,
-            ..default()
-        }),
-        ..default()
-    }));
     #[cfg(target_arch = "wasm32")]
     {
         use bevy::asset::AssetMetaCheck;
@@ -45,6 +38,13 @@ fn main() {
             .insert_resource(Msaa::Off)
             .insert_resource(AssetMetaCheck::Never);
     }
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            prevent_default_event_handling: false,
+            ..default()
+        }),
+        ..default()
+    }));
     #[cfg(all(debug_assertions, not(target_arch = "wasm32")))]
     {
         use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -88,19 +88,19 @@ fn spawn_reactor(mut commands: Commands) {
                 once::switch::on::<InOperation>()
                     .then(wait::any(actions![
                         // 0: move cells
-                        update_cells(),   
+                        update_cells(),
                         // 1: stage clear
-                        wait::event::comes::<LastOne>(),   
+                        wait::event::comes::<LastOne>(),
                         // 2: retry this stage
-                        request_reset_stage(),    
+                        request_reset_stage(),
                         // 3: generate another stage
-                        request_regenerate_stage(),   
+                        request_regenerate_stage(),
                         // 4: play answer
                         request_play_answer_mode(),
                         // 5: undo
-                        request_undo(),    
+                        request_undo(),
                         // 6: redo
-                        request_redo(),    
+                        request_redo(),
                     ]))
                     .through(cleanup())
             }).await;

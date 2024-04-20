@@ -26,7 +26,7 @@ impl Calculator for SmallSizeCalculator {
             };
         let can = if let Some(MovableRatio { ratio: dist_ratio, .. }) = dist_ratio {
             match dir {
-                MoveDir::RightDown => {
+                MoveDir::LeftUp => {
                     (*dist_ratio / *src_ratio).is_some()
                 }
                 _ => true

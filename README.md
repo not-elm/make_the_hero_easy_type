@@ -29,12 +29,12 @@ move dist = md
 move source = ms
 ```
 
-| move direction                        | operation               |  
-|---------------------------------------|-------------------------|
-| left up                               | md + ms                 |
-| right up                              | md - ms                 |
-| left down                             | md * ms                 | 
-| right down(if ms is zero, can't move) | md / ms                 | 
+| move direction                      | operation |  
+|-------------------------------------|-----------|
+| left up (if ms is zero, can't move) | md / ms   |
+| right up                            | md * ms   |
+| left down                           | md - ms   | 
+| right down                          | md + ms   | 
 
 ### swap
 
@@ -49,7 +49,6 @@ For important point, `ms` is determined to have moved, but `md` is determined no
 | `R`          | retry this stage     | 
 | `G`          | generate a new stage |
 | `P`          | play answer          | 
-
 
 ## Build and run from source code
 
