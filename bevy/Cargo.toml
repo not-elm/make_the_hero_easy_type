@@ -17,4 +17,7 @@ puzzle_core = { path = "../puzzle_core", features = ["bevy"] }
 bevy-input-sequence = "0.3.0"
 bevy_mod_picking = { version = "0.18.2", default-features = false, features = ["backend_sprite", "backend_raycast"] }
 bevy_tweening = "0.10.0"
+
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 bevy-inspector-egui = "0.24.0"

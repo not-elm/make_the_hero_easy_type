@@ -45,7 +45,7 @@ fn main() {
             .insert_resource(Msaa::Off)
             .insert_resource(AssetMetaCheck::Never);
     }
-    #[cfg(debug_assertions)]
+    #[cfg(all(debug_assertions, not(target_arch = "wasm32")))]
     {
         use bevy_inspector_egui::quick::WorldInspectorPlugin;
         app.add_plugins(WorldInspectorPlugin::new());
