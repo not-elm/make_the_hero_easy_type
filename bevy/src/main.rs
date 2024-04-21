@@ -13,13 +13,13 @@ use bevy_tweening::{TweenCompleted, TweeningPlugin};
 use crate::action::cell_select::select_cell;
 use crate::action::cleanup::cleanup;
 use crate::action::move_cell::move_cell;
-use crate::action::play_answer::{exists_steps, play_next_step, setup_step_resource};
+use crate::action::play_answer::{AnswerModeNextStatus, exists_steps, play_next_step, setup_step_resource, wait_input_next_status};
 use crate::action::setup_cells::{regenerate_stage, reset_stage};
 use crate::action::stage_clear::stage_clear;
 use crate::arrow::ArrowSelected;
 use crate::plugin::PuzzlePlugins;
 use crate::plugin::stage::{CellSelected, CorrectAnswerNum, RequestCancelMove};
-use crate::plugin::stage_clear::{InOperation, LastOne};
+use crate::plugin::stage_clear::{InOperation, LastOne, PlayAnswerMode};
 use crate::plugin::stage_ui::{RequestCellRedo, RequestCellUndo, RequestPlayAnswerMode, RequestRegenerateStage, RequestResetStage};
 
 mod arrow;
@@ -85,7 +85,8 @@ fn spawn_reactor(mut commands: Commands) {
         task.will(Update, setup_stage()).await;
         loop {
             let end_action_index = task.will(Update, {
-                once::switch::on::<InOperation>()
+                once::switch::on::<PlayAnswerMode>()
+                    .then(once::switch::on::<InOperation>())
                     .then(wait::any(actions![
                         // 0: move cells
                         update_cells(),
@@ -118,10 +119,19 @@ fn spawn_reactor(mut commands: Commands) {
                     ).await;
                 }
                 4 => {
-                    task.will(Update, setup_step_resource()).await;
-                    while task.will(Update, exists_steps()).await {
-                        task.will(Update, play_next_step()).await;
+                    task.will(Update, once::switch::off::<PlayAnswerMode>()).await;
+                    loop {
+                        task.will(Update, setup_step_resource()).await;
+                        while task.will(Update, exists_steps()).await {
+                            task.will(Update, play_next_step()).await;
+                        }
+                        let next_status = task.will(Update, wait_input_next_status()).await;
+                        if matches!(next_status,  AnswerModeNextStatus::NextStage) {
+                            task.will(Update, regenerate_stage()).await;
+                            break;
+                        }
                     }
+                    task.will(Update, once::switch::off::<PlayAnswerMode>()).await;
                 }
                 5 => {
                     let _ = task.will(Update, record::undo::once::<CellAct>()).await;

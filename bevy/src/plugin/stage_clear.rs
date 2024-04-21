@@ -3,7 +3,7 @@ use std::time::Duration;
 use bevy::app::{App, Plugin};
 use bevy::hierarchy::BuildChildren;
 use bevy::math::Vec3;
-use bevy::prelude::{BackgroundColor, ButtonBundle, Color, Commands, Component, default, Display, Entity, Event, EventReader, EventWriter, IntoSystemConfigs, JustifyText, NodeBundle, Query, Res, Resource, TextBundle, TextSection, Transform, Update, With};
+use bevy::prelude::{BackgroundColor, ButtonBundle, Color, Commands, Component, Condition, default, Display, Entity, Event, EventReader, EventWriter, IntoSystemConfigs, JustifyText, NodeBundle, Query, Res, Resource, TextBundle, TextSection, Transform, Update, With};
 use bevy::text::{Text, TextStyle};
 use bevy::ui::{AlignItems, FlexDirection, Interaction, JustifyContent, Style, UiRect, Val};
 use bevy_flurx::prelude::switch_turned_on;
@@ -45,7 +45,7 @@ impl Plugin for StageClearPlugin {
             .add_event::<RequestStageClear>()
             .add_systems(Update, send_last_one.run_if(switch_turned_on::<InOperation>))
             .add_systems(Update, (
-                start_stage_clear_animation.run_if(come_request_stage_clear),
+                start_stage_clear_animation.run_if(come_request_stage_clear.and_then(switch_turned_on::<PlayAnswerMode>)),
                 wait_animation_then_show_generate_button,
                 next_stage_button_input
             ));
