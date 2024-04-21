@@ -1,9 +1,8 @@
-use std::f32::consts::PI;
 use std::time::Duration;
 
 use bevy::asset::AssetServer;
-use bevy::math::{Quat, Vec2, Vec3};
-use bevy::prelude::{Color, Commands, default, Entity, EventWriter, In, Query, Res, Sprite, SpriteBundle, Transform};
+use bevy::math::{Vec2, Vec3};
+use bevy::prelude::{Color, Commands, Component, default, Entity, EventWriter, In, Query, Res, Sprite, SpriteBundle, Transform};
 use bevy_flurx::action::{Action, delay};
 use bevy_flurx::prelude::*;
 use bevy_mod_picking::events::{Down, Pointer};
@@ -13,9 +12,13 @@ use bevy_tweening::lens::TransformPositionLens;
 
 use puzzle_core::move_dir::MoveDir;
 
-use crate::arrow::{MovableCell, ArrowSelected, Arrow};
+use crate::arrow::{Arrow, ArrowSelected, MovableCell};
 use crate::consts::PUZZLE_HALF;
 use crate::plugin::stage::{CellNo, CellSelected, MoveSource, PuzzleStage};
+
+#[derive(Component)]
+pub struct PreviewText;
+
 
 pub fn select_cell() -> Action<Duration> {
     delay::time().with(Duration::from_millis(100))
@@ -53,21 +56,16 @@ fn spawn_arrow(
         return;
     }
     let start = puzzle.get(src_entity).unwrap().translation;
-    #[cfg(not(debug_assertions))]
-    const ASSET_PATH: &str = "arrow_release.png";
-    #[cfg(debug_assertions)]
-    const ASSET_PATH: &str = "arrow.png";
 
     commands.spawn((
         Arrow,
         SpriteBundle {
             sprite: Sprite {
-                custom_size: Some(Vec2::splat(PUZZLE_HALF)),
-                color: Color::default().with_a(0.5),
+                custom_size: Some(Vec2::splat(32.)),
+                color: Color::default().with_a(0.9),
                 ..default()
             },
-            texture: asset.load(ASSET_PATH),
-            transform: Transform::from_rotation(to_quat(&dir)),
+            texture: asset.load(dir.asset_path()),
             ..default()
         },
         Animator::new(Tween::new(
@@ -96,21 +94,8 @@ fn replace_cell_point_down_handle(
         .and_then(|dist_no| cells.iter().find(|(_, no)| no.0 == dist_no)) {
         commands.entity(entity).insert((
             MovableCell(dir),
-            On::<Pointer<Down>>::run(send_arrow_selected)
+            On::<Pointer<Down>>::run(send_arrow_selected),
         ));
-    }
-}
-
-fn to_quat(dir: &MoveDir) -> Quat {
-    match dir {
-        MoveDir::Right => Quat::default(),
-        MoveDir::RightUp => Quat::from_rotation_z(PI / 4.),
-        MoveDir::Up => Quat::from_rotation_z(PI / 2.),
-        MoveDir::LeftUp => Quat::from_rotation_z(PI * 0.75),
-        MoveDir::Left => Quat::from_rotation_z(PI),
-        MoveDir::LeftDown => Quat::from_rotation_z(1.25 * PI),
-        MoveDir::Down => Quat::from_rotation_z(1.5 * PI),
-        MoveDir::RightDown => Quat::from_rotation_z(1.75 * PI)
     }
 }
 
