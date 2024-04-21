@@ -17,9 +17,17 @@ pub struct Ratio {
 impl Ratio {
     pub fn new(numer: isize, denom: NonZeroIsize) -> Self {
         let gcd = num::integer::gcd(numer, denom.get());
+        let mut numer = numer / gcd;
+        let mut denom = denom.get() / gcd;
+
+        if denom < 0 {
+            numer *= -1;
+            denom = denom.abs();
+        }
+
         Self {
-            numer: numer / gcd,
-            denom: denom.get() / gcd,
+            numer,
+            denom,
         }
     }
 }
@@ -171,5 +179,25 @@ mod tests {
         let lhs = Ratio::new(2, NonZeroIsize::new(3).unwrap());
         let rhs = Ratio::new(0, NonZeroIsize::new(5).unwrap());
         assert_eq!(lhs / rhs, None);
+    }
+
+    #[test]
+    fn ratio_eq() {
+        let r1 = Ratio::from(5);
+        let r2 = Ratio::new(-5, NonZeroIsize::new(-1).unwrap());
+        assert_eq!(r1, r2);
+
+        let r1 = Ratio::new(5, NonZeroIsize::new(-1).unwrap());
+        let r2 = Ratio::new(-5, NonZeroIsize::new(1).unwrap());
+        assert_eq!(r1, r2);
+    }
+
+
+    #[test]
+    fn ratio_display() {
+        let r1 = Ratio::new(-5, NonZeroIsize::new(2).unwrap());
+        assert_eq!(r1.to_string(), "-5/2");
+        let r1 = Ratio::new(5, NonZeroIsize::new(-2).unwrap());
+        assert_eq!(r1.to_string(), "-5/2");
     }
 }
