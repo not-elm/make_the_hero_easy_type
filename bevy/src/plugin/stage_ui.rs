@@ -234,7 +234,7 @@ fn spawn_right_panel(
                 position_type: PositionType::Absolute,
                 row_gap: Val::Px(16.),
                 right: Val::Px(16.),
-                top: Val::Px(16.),
+                bottom: Val::Px(16.),
                 ..default()
             },
             ..default()
