@@ -3,17 +3,17 @@ use std::time::Duration;
 use bevy::app::{App, Plugin};
 use bevy::hierarchy::BuildChildren;
 use bevy::math::Vec3;
-use bevy::prelude::{BackgroundColor, Color, Commands, default, Display, Event, EventReader, EventWriter, IntoSystemConfigs, JustifyText, NodeBundle, Query, Res, Resource, TextBundle, TextSection, Transform, Update};
+use bevy::prelude::{BackgroundColor, ButtonBundle, Color, Commands, Component, default, Display, Entity, Event, EventReader, EventWriter, IntoSystemConfigs, JustifyText, NodeBundle, Query, Res, Resource, TextBundle, TextSection, Transform, Update, With};
 use bevy::text::{Text, TextStyle};
-use bevy::ui::{AlignItems, JustifyContent, Style, Val};
+use bevy::ui::{AlignItems, FlexDirection, Interaction, JustifyContent, Style, UiRect, Val};
 use bevy_flurx::prelude::switch_turned_on;
-use bevy_tweening::{Animator, EaseFunction, Tween};
+use bevy_tweening::{Animator, EaseFunction, Tween, TweenCompleted};
 use bevy_tweening::lens::TransformScaleLens;
 
-use crate::consts::{GAME_CLEAR_COUNT, TWEEN_SHOW_TEXT};
+use crate::consts::{ACCENT_COLOR, GAME_CLEAR_COUNT, TWEEN_SHOW_TEXT};
 use crate::plugin::secret::SecretStopWatch;
 use crate::plugin::stage::{Answer, CellRatio, CorrectAnswerNum};
-use crate::plugin::stage_ui::StageClearText;
+use crate::plugin::stage_ui::{RequestRegenerateStage, StageClearText};
 
 #[derive(Resource, Copy, Clone, Debug, Eq, PartialEq)]
 pub struct PlayAnswerMode;
@@ -33,6 +33,9 @@ pub struct InOperation;
 #[derive(Event, Copy, Clone, Debug, Eq, PartialEq)]
 pub struct RequestStageClear;
 
+#[derive(Component)]
+struct NextStageButton;
+
 pub struct StageClearPlugin;
 
 impl Plugin for StageClearPlugin {
@@ -41,7 +44,11 @@ impl Plugin for StageClearPlugin {
             .add_event::<LastOne>()
             .add_event::<RequestStageClear>()
             .add_systems(Update, send_last_one.run_if(switch_turned_on::<InOperation>))
-            .add_systems(Update, start_stage_clear_animation.run_if(come_request_stage_clear));
+            .add_systems(Update, (
+                start_stage_clear_animation.run_if(come_request_stage_clear),
+                wait_animation_then_show_generate_button,
+                next_stage_button_input
+            ));
     }
 }
 
@@ -83,8 +90,10 @@ fn start_stage_clear_animation(
                 width: Val::Percent(100.),
                 height: Val::Percent(100.),
                 display: Display::Flex,
+                flex_direction: FlexDirection::Column,
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
+                row_gap: Val::Percent(8.),
                 ..default()
             },
             background_color: BackgroundColor(Color::BLACK.with_a(0.7)),
@@ -114,11 +123,55 @@ fn start_stage_clear_animation(
         });
 }
 
+fn wait_animation_then_show_generate_button(
+    mut commands: Commands,
+    mut er: EventReader<TweenCompleted>,
+    text_root: Query<Entity, With<StageClearText>>,
+) {
+    if !er.read().any(|e| e.user_data == TWEEN_SHOW_TEXT) { return; }
+    let Some(root_entity) = text_root.iter().next() else {
+        return;
+    };
+    commands.entity(root_entity).with_children(|ui| {
+        ui.spawn((
+            NextStageButton,
+            ButtonBundle {
+                style: Style{
+                    padding: UiRect::all(Val::Px(8.)),
+                    ..default()
+                },
+                background_color: BackgroundColor(ACCENT_COLOR),
+                ..default()
+            }
+        ))
+            .with_children(|ui| {
+                ui.spawn(TextBundle {
+                    text: Text::from_section("[G]: Generate next stage", TextStyle {
+                        font_size: 64.,
+                        color: Color::BLACK,
+                        ..default()
+                    }),
+                    ..default()
+                });
+            });
+    });
+}
+
+fn next_stage_button_input(
+    mut ew: EventWriter<RequestRegenerateStage>,
+    button: Query<&Interaction, With<NextStageButton>>,
+) {
+    for interaction in button.iter() {
+        if matches!(interaction, Interaction::Pressed) {
+            ew.send(RequestRegenerateStage);
+        }
+    }
+}
+
 fn stage_clear_message() -> TextBundle {
     TextBundle {
         text: Text::from_sections([
             TextSection::new("Stage Clear\n\n", cleat_message_style()),
-            generate_next_stage_message(),
         ]).with_justify(JustifyText::Center),
         transform: Transform::from_scale(Vec3::ZERO),
         ..default()
@@ -135,16 +188,11 @@ fn secret_message(time: String) -> TextBundle {
                 color: Color::GOLD,
                 ..default()
             }),
-            generate_next_stage_message(),
         ])
             .with_justify(JustifyText::Center),
         transform: Transform::from_scale(Vec3::ZERO),
         ..default()
     }
-}
-
-fn generate_next_stage_message() -> TextSection {
-    TextSection::new("[G]: Generate next stage", message_style())
 }
 
 fn cleat_message_style() -> TextStyle {

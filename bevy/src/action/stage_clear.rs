@@ -8,7 +8,7 @@ use bevy_flurx::prelude::{ActionSeed, Pipe, Then};
 use crate::consts::{GAME_CLEAR_COUNT, TWEEN_SHOW_TEXT};
 use crate::plugin::stage::CorrectAnswerNum;
 use crate::plugin::stage_clear::{PlayAnswerMode, RequestStageClear};
-use crate::plugin::stage_ui::StageClearText;
+use crate::plugin::stage_ui::{RequestRegenerateStage, StageClearText};
 use crate::wait_tween_event;
 
 pub fn stage_clear() -> ActionSeed {
@@ -17,7 +17,10 @@ pub fn stage_clear() -> ActionSeed {
         .then(delay::time().with(Duration::from_millis(300)))
         .then(once::event::send().with(RequestStageClear))
         .then(wait_tween_event(TWEEN_SHOW_TEXT))
-        .then(wait::input::just_pressed().with(KeyCode::KeyG))
+        .then(wait::either(
+            wait::event::comes::<RequestRegenerateStage>(),
+            wait::input::just_pressed().with(KeyCode::KeyG)
+        ))
         .then(once::run(reset_answer_num_if_game_cleared))
         .then(once::run(despawn_stage_clear_text))
         .omit_input()

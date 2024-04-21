@@ -5,7 +5,9 @@ use bevy::prelude::{BackgroundColor, Bundle, ButtonBundle, Color, Commands, Comp
 use bevy::text::{TextSection, TextStyle};
 use bevy::ui::{Display, FlexDirection, Interaction, Style, UiRect};
 use bevy::utils::default;
+use bevy_mod_picking::events::{Down, Pointer};
 use bevy_mod_picking::picking_core::Pickable;
+use bevy_mod_picking::prelude::ListenerInput;
 
 use crate::consts::ACCENT_COLOR;
 use crate::plugin::stage::{Answer, CorrectAnswerNum};
@@ -23,6 +25,12 @@ pub struct RequestResetStage;
 
 #[derive(Debug, Default, Copy, Clone, Event)]
 pub struct RequestRegenerateStage;
+
+impl From<ListenerInput<Pointer<Down>>> for RequestRegenerateStage{
+    fn from(_: ListenerInput<Pointer<Down>>) -> Self {
+        Self
+    }
+}
 
 #[derive(Debug, Default, Copy, Clone, Event)]
 pub struct RequestPlayAnswerMode;
